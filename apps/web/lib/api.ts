@@ -8,7 +8,11 @@ import type {
   Station,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+// On Vercel (single multi-service project) the API is served same-origin
+// under /api/api; locally we talk to uvicorn directly.
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production" ? "/api/api" : "http://127.0.0.1:8000");
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
