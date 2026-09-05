@@ -2,19 +2,27 @@
 
 /**
  * Ask PadForward — the AI agent. Understands natural language and calls
- * real application tools (find, recommend, report, adopt). Powered by
- * Gemini when configured; a deterministic engine otherwise.
+ * real application tools (find, recommend, report, adopt).
+ *
+ * Fallback chain:
+ *   1. Server AI (/api/ai/query): Gemini when configured, else the
+ *      deterministic server engine — always grounded in live network data.
+ *   2. Offline: the browser's built-in on-device AI (Chrome Prompt API /
+ *      Gemini Nano), grounded in the last station data the app cached.
+ *   3. Last resort: deterministic heuristics over the cached map data.
  */
 import { useRef, useState } from "react";
-import { Wrench } from "lucide-react";
+import { Wrench, WifiOff } from "lucide-react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { api } from "@/lib/api";
+import { offlineQuery } from "@/lib/browserAI";
 import type { AIResponse } from "@/lib/types";
 
 interface Turn {
   role: "user" | "assistant";
   text: string;
   tools?: string[];
+  provider?: string;
 }
 
 const SUGGESTIONS = [
@@ -42,12 +50,20 @@ export default function AssistantPage() {
       const res: AIResponse = await api.aiQuery(message, lat, lng);
       setTurns((t) => [
         ...t,
-        { role: "assistant", text: res.reply, tools: res.tool_calls.map((c) => c.tool) },
+        {
+          role: "assistant",
+          text: res.reply,
+          tools: res.tool_calls.map((c) => c.tool),
+          provider: res.provider,
+        },
       ]);
     } catch {
+      // Network/API unreachable — fall back to on-device browser AI,
+      // then deterministic heuristics over cached map data.
+      const res = await offlineQuery(message);
       setTurns((t) => [
         ...t,
-        { role: "assistant", text: "I couldn't reach the network. Please try again." },
+        { role: "assistant", text: res.reply, provider: res.provider },
       ]);
     } finally {
       setBusy(false);
@@ -104,6 +120,14 @@ export default function AssistantPage() {
               <p className="mt-1.5 flex items-center gap-1 text-xs opacity-70">
                 <Wrench aria-hidden="true" className="h-3 w-3" />
                 {turn.tools.join(", ")}
+              </p>
+            )}
+            {(turn.provider === "browser-ai" || turn.provider === "offline-heuristics") && (
+              <p className="mt-1.5 flex items-center gap-1 text-xs opacity-70">
+                <WifiOff aria-hidden="true" className="h-3 w-3" />
+                {turn.provider === "browser-ai"
+                  ? "answered offline by your browser's built-in AI"
+                  : "answered offline using cached map data"}
               </p>
             )}
           </div>

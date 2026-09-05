@@ -7,12 +7,12 @@ import type {
   SolQuote,
   Station,
 } from "./types";
+import { cacheStations } from "./browserAI";
 
-// On Vercel (single multi-service project) the API is served same-origin
-// under /api/api; locally we talk to uvicorn directly.
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ??
-  (process.env.NODE_ENV === "production" ? "/api/api" : "http://127.0.0.1:8000");
+// The API is served by Next.js route handlers under /api (same origin).
+// NEXT_PUBLIC_API_URL can still point at the standalone FastAPI service
+// (see services/api + docs/architecture.md) for the full-stack setup.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -27,18 +27,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// Cache station lists so the assistant can still help when offline
+// (browser built-in AI / heuristics fallbacks in browserAI.ts).
+async function stationsRequest(path: string): Promise<Station[]> {
+  const stations = await request<Station[]>(path);
+  if (typeof window !== "undefined") cacheStations(stations);
+  return stations;
+}
+
 export const api = {
   health: () => request<HealthInfo>("/health"),
 
   nearbyStations: (lat: number, lng: number, radiusKm = 8) =>
-    request<Station[]>(
+    stationsRequest(
       `/stations/nearby?latitude=${lat}&longitude=${lng}&radius_km=${radiusKm}`
     ),
 
   priorityStations: (lat?: number, lng?: number, limit = 5) => {
     const loc =
       lat !== undefined && lng !== undefined ? `&latitude=${lat}&longitude=${lng}` : "";
-    return request<Station[]>(`/stations/priority?limit=${limit}${loc}`);
+    return stationsRequest(`/stations/priority?limit=${limit}${loc}`);
   },
 
   station: (id: number) => request<Station>(`/stations/${id}`),
@@ -50,7 +58,7 @@ export const api = {
     destLng: number,
     maxDetourKm = 2
   ) =>
-    request<Station[]>(
+    stationsRequest(
       `/stations/along-route?origin_lat=${originLat}&origin_lng=${originLng}` +
         `&dest_lat=${destLat}&dest_lng=${destLng}&max_detour_km=${maxDetourKm}`
     ),

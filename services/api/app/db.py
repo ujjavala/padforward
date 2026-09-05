@@ -8,7 +8,7 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# Normalise Heroku/Neon/Vercel-style URLs for SQLAlchemy.
+# Normalise Heroku/Neon-style URLs for SQLAlchemy.
 _db_url = settings.database_url
 if _db_url.startswith("postgres://"):
     _db_url = _db_url.replace("postgres://", "postgresql+psycopg2://", 1)

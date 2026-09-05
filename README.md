@@ -63,6 +63,16 @@ database answers *"does it have community supplies, how badly does it need them,
 who supports it, and when was it last verified?"* Maps is never the inventory
 system.
 
+### Hackathon deployment vs designed architecture
+
+For the hackathon the whole product ships as a **single Next.js app on Vercel**:
+the FastAPI service was ported one-to-one to Next.js route handlers
+(`apps/web/app/api/*` + `apps/web/server/*`) backed by an in-memory demo store,
+keeping the exact same API contract. The **designed architecture** — FastAPI +
+PostgreSQL/PostGIS behind that same contract — lives in `services/api` with
+`docker-compose.yml` and a full pytest suite, and the frontend switches to it
+with one env var (`NEXT_PUBLIC_API_URL`).
+
 ## Tech stack
 
 | Layer | Tech |
@@ -92,9 +102,19 @@ get_user_impact · find_locations_along_route
 
 **Safety:** the model can never write to the database directly — every action
 goes through the same validated service layer as the REST API, and it may only
-state availability that comes from tool results. Without a `GEMINI_API_KEY`, a
-deterministic intent engine answers using the *same tools*, so the product always
-works.
+state availability that comes from tool results.
+
+**The assistant never just fails — it degrades gracefully:**
+
+1. **Gemini** (server) — full tool-calling agent on live network data.
+2. **Deterministic engine** (server) — without a `GEMINI_API_KEY`, a keyword
+   intent engine answers using the *same tools*.
+3. **Browser built-in AI** (offline) — if the network is unreachable, the app
+   tries the browser's on-device AI (Chrome Prompt API / Gemini Nano), grounded
+   in the last cached station data and instructed never to invent availability.
+4. **Offline heuristics** (last resort) — deterministic rules over cached map
+   data: closest last-known supply if you need a pad, highest need score if you
+   want to donate.
 
 ## Google Maps integration
 
@@ -149,6 +169,7 @@ and degrades gracefully:
 |---|---|
 | `GOOGLE_MAPS_API_KEY` | Accessible schematic map + station list |
 | `GEMINI_API_KEY` | Deterministic recommendation/intent engine |
+| Network entirely (offline) | Browser built-in AI (Chrome Prompt API) → heuristics on cached map data |
 | `DATABASE_URL` | Local SQLite |
 | Snowflake credentials | PostgreSQL analytics |
 

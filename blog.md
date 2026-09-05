@@ -202,6 +202,18 @@ So Gemini isn't there just to have a conversation.
 
 **It's there to help the network make decisions and take actions.**
 
+## And what if the AI isn't available at all?
+
+This mattered to me, because the moment you most need PadForward is exactly the moment you might be underground at a train station with one bar of signal.
+
+So the assistant degrades gracefully instead of just failing:
+
+1. **Gemini first.** When the server and the Gemini API are reachable, the full agent runs — real tool calls, live network data.
+2. **Your browser's built-in AI second.** If the network is unreachable, PadForward tries the browser's built-in on-device AI (Chrome's Prompt API, powered by Gemini Nano). It runs entirely offline, grounded in the last station data the app cached — and it's told explicitly to never invent availability and to remind you the data may be stale.
+3. **Plain heuristics last.** If there's no built-in AI either, a small deterministic engine answers from the cached map data: closest place that last reported supply if you need a pad, highest need score if you want to donate.
+
+The answer might get simpler at each step down, but you never get a spinner and a shrug.
+
 ---
 
 # What if the map says there are pads, but there aren't?

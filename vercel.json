@@ -4,26 +4,6 @@
     "web": {
       "root": "apps/web",
       "framework": "nextjs"
-    },
-    "api": {
-      "root": "services/api",
-      "entrypoint": "api/index.py"
     }
-  },
-  "rewrites": [
-    {
-      "source": "/api/api(/.*)?",
-      "destination": {
-        "type": "service",
-        "service": "api"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "type": "service",
-        "service": "web"
-      }
-    }
-  ]
+  }
 }
