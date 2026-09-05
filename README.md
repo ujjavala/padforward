@@ -125,6 +125,12 @@ state availability that comes from tool results.
    data: closest last-known supply if you need a pad, highest need score if you
    want to donate.
 
+**Vision — "snap the box":** on a station page you can photograph the donation
+box instead of counting pads yourself. Gemini vision estimates the count
+(strict JSON, clamped, confidence-rated) and prefills a supply report; offline,
+the same flow runs on the browser's built-in multimodal AI entirely on-device.
+The photo is analyzed and discarded — never stored.
+
 ## Google Maps integration
 
 - Interactive map with colour-coded, labelled supply pins (never colour-only)
@@ -167,7 +173,8 @@ npm run dev                            # http://localhost:3000
 `.env.example`.
 
 **Tests:** `cd services/api && python -m pytest` (29 tests: need score, API
-flows, AI agent intents & tool validation).
+flows, AI agent intents & tool validation) and `cd apps/web && npm test`
+(vitest: vision estimate parsing & vision API validation).
 
 ## Environment variables
 

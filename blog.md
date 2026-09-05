@@ -222,6 +222,16 @@ The answer might get simpler at each step down, but you never get a spinner and 
 
 ---
 
+### Snap the box — AI that counts pads from a photo
+
+Supply reports are the lifeblood of the network, so I wanted reporting to take *zero* effort.
+
+On any station page, instead of counting pads and tapping buttons, you can just photograph the donation box. Gemini vision looks at the photo and returns a strict JSON estimate — count, confidence, and a one-line description — which prefills a real supply report you confirm with one tap.
+
+And it follows the same philosophy as the assistant: if you're offline, the exact same flow runs on your **browser's built-in multimodal AI** (Chrome's Prompt API), entirely on-device. The photo is analyzed and discarded either way — never uploaded, never stored.
+
+---
+
 ### What if the map says there are pads, but there aren't?
 
 This was another thing I didn't want to fake.
@@ -389,11 +399,12 @@ The interesting pieces:
 
 - **An agent, not a chatbot (Google AI).** Gemini 2.0 Flash gets a registry of 11 validated application tools (`find_nearby_stations`, `get_highest_need_locations`, `report_supply_status`, `create_donation`, …) and decides which to call — multi-round function calling, and it may only state availability that comes from tool results. It can never touch the data store directly.
 - **A four-tier AI fallback chain.** Gemini → a deterministic intent engine using the *same tools* → the browser's built-in on-device AI (Chrome Prompt API / Gemini Nano) grounded in cached station data when you're fully offline → plain heuristics over the cached map. The answer gets simpler at each step, but you never get a spinner and a shrug.
+- **Vision supply reports.** Photograph a donation box and Gemini vision (or the browser's built-in multimodal AI when offline) counts the pads and prefills a supply report — photo analyzed and discarded, never stored.
 - **Solana donations.** Sponsoring pads produces a quote (pads → SOL) and records the donation with a transaction signature. With devnet enabled, it submits a **real Memo transaction to Solana devnet** (auto-airdrop funded) and links to Solana Explorer; otherwise it's transparently labelled *devnet (simulated)*.
 - **A deterministic, ML-ready need score.** Every station gets a 0–100 score (40% supply shortage, 20% estimated demand, 15% staleness, 15% recent requests, 10% historical demand) in an isolated module — that's what routes donations to where they help most.
 - **Trust over false precision.** Supply is community-reported (🟢/🟡/🔴/⚪) with timestamps and a confidence model — champion reports and agreeing recent reports raise confidence, conflicts lower it.
 
 ## Prize Categories
 
-- **Best Use of Google AI** — Gemini function-calling agent over real application tools, plus the offline Chrome built-in AI (Gemini Nano) fallback.
+- **Best Use of Google AI** — Gemini function-calling agent over real application tools, vision-based photo supply reports, plus the offline Chrome built-in AI (Gemini Nano) fallback for both.
 - **Best Use of Solana** — donation flow with SOL quotes and on-chain (devnet) Memo transaction records — the blockchain underneath the experience, not the experience.

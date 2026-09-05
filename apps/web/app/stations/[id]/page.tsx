@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { Camera } from "lucide-react";
 import { NeedBadge, SupplyBadge } from "@/components/Badges";
 import { api, directionsUrl } from "@/lib/api";
 import { timeAgo } from "@/lib/display";
+import { analyzeSupplyPhoto, type VisionEstimate } from "@/lib/visionReport";
 import type { Station } from "@/lib/types";
 
 const REPORT_OPTIONS = [
@@ -22,6 +24,9 @@ export default function StationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [estimate, setEstimate] = useState<VisionEstimate | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -62,6 +67,20 @@ export default function StationDetailPage() {
       setNotice("Couldn't record the report. Please try again.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onPhoto(file: File | undefined) {
+    if (!file) return;
+    setAnalyzing(true);
+    setEstimate(null);
+    setNotice(null);
+    const result = await analyzeSupplyPhoto(file);
+    setAnalyzing(false);
+    if (result) {
+      setEstimate(result);
+    } else {
+      setNotice("Couldn't analyze the photo — tap one of the buttons above instead.");
     }
   }
 
@@ -134,6 +153,67 @@ export default function StationDetailPage() {
             </button>
           ))}
         </fieldset>
+
+        <div className="mt-4 border-t border-ink-900/10 pt-4">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={(e) => void onPhoto(e.target.files?.[0])}
+          />
+          <button
+            type="button"
+            disabled={busy || analyzing}
+            onClick={() => fileRef.current?.click()}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 px-4 py-3 text-sm font-semibold text-teal-800 transition hover:border-teal-650 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-300"
+          >
+            <Camera aria-hidden="true" className="h-4 w-4" />
+            {analyzing ? "Analyzing photo…" : "Or snap a photo of the box — AI counts for you"}
+          </button>
+          <p className="mt-1.5 text-xs text-ink-500">
+            Uses Gemini vision online, or your browser's built-in AI offline. The photo is
+            analyzed and discarded — never stored.
+          </p>
+          {estimate && (
+            <div className="mt-3 rounded-xl bg-teal-50 p-3 text-sm">
+              <p>
+                <span className="font-semibold">~{estimate.count} pads</span>{" "}
+                <span className="text-ink-500">
+                  ({estimate.confidence} confidence,{" "}
+                  {estimate.provider === "gemini-vision"
+                    ? "Gemini vision"
+                    : "on-device browser AI"}
+                  )
+                </span>
+              </p>
+              {estimate.description && (
+                <p className="mt-0.5 text-xs text-ink-500">{estimate.description}</p>
+              )}
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    void report(estimate.count);
+                    setEstimate(null);
+                  }}
+                  className="rounded-lg bg-teal-650 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-300"
+                >
+                  Submit report (~{estimate.count})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEstimate(null)}
+                  className="rounded-lg border border-ink-900/10 bg-white px-3 py-1.5 text-xs font-semibold hover:border-teal-650 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-300"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="card">
