@@ -4,13 +4,14 @@
  * Find a Pad — the emotional core of PadForward.
  * Quiet Mode: anonymous, minimal UI, no signup, no public request.
  */
-import { useCallback, useEffect, useState } from "react";
-import { HeartHandshake } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Camera, HeartHandshake } from "lucide-react";
 import { MapView } from "@/components/MapView";
 import { StationCard } from "@/components/StationCard";
 import { DEMO_LOCATION, useGeolocation } from "@/hooks/useGeolocation";
 import { api, directionsUrl } from "@/lib/api";
 import { SUPPLY_META, isStale, timeAgo } from "@/lib/display";
+import { analyzeSupplyPhoto, type VisionEstimate } from "@/lib/visionReport";
 import type { Station } from "@/lib/types";
 
 type Phase = "locate" | "list" | "detail" | "received";
@@ -24,6 +25,31 @@ export default function FindPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [remaining, setRemaining] = useState<string>("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [estimate, setEstimate] = useState<VisionEstimate | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function onPhoto(file: File | undefined) {
+    if (!file) return;
+    setAnalyzing(true);
+    setPhotoError(null);
+    setEstimate(null);
+    try {
+      const result = await analyzeSupplyPhoto(file);
+      if (result) {
+        setEstimate(result);
+        setRemaining(String(result.count));
+      } else {
+        setPhotoError("AI couldn't read that photo — enter the count manually.");
+      }
+    } catch {
+      setPhotoError("Photo analysis isn't available right now — enter the count manually.");
+    } finally {
+      setAnalyzing(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
 
   const loadStations = useCallback(async (lat: number, lng: number) => {
     setLoading(true);
@@ -189,6 +215,37 @@ export default function FindPage() {
             >
               I received a pad
             </button>
+          </div>
+          <div className="mt-3 border-t border-ink-900/10 pt-3">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={(e) => void onPhoto(e.target.files?.[0])}
+            />
+            <button
+              type="button"
+              disabled={analyzing}
+              onClick={() => fileRef.current?.click()}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-teal-300 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-800 transition hover:border-teal-650 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-300"
+            >
+              <Camera aria-hidden="true" className="h-4 w-4" />
+              {analyzing ? "Analyzing photo…" : "Not sure? Snap the box — AI counts for you"}
+            </button>
+            {estimate && (
+              <p className="mt-1.5 text-xs text-ink-500">
+                AI estimates <span className="font-semibold">~{estimate.count} pads</span> (
+                {estimate.confidence} confidence,{" "}
+                {estimate.provider === "gemini-vision" ? "Gemini vision" : "on-device browser AI"}
+                ) — count filled in above. Adjust if it looks off.
+              </p>
+            )}
+            {photoError && <p className="mt-1.5 text-xs text-rose-700">{photoError}</p>}
+            <p className="mt-1.5 text-xs text-ink-300">
+              The photo is analyzed and discarded — never stored.
+            </p>
           </div>
         </div>
       </div>
