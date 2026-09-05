@@ -125,11 +125,11 @@ state availability that comes from tool results.
    data: closest last-known supply if you need a pad, highest need score if you
    want to donate.
 
-**Vision — "snap the box":** on a station page you can photograph the donation
-box instead of counting pads yourself. Gemini vision estimates the count
-(strict JSON, clamped, confidence-rated) and prefills a supply report; offline,
-the same flow runs on the browser's built-in multimodal AI entirely on-device.
-The photo is analyzed and discarded — never stored.
+**Vision — "snap the box":** in the Find flow or on a station page you can
+photograph the donation box instead of counting pads yourself. Gemini vision
+estimates the count (strict JSON, clamped, confidence-rated) and prefills a
+supply report; offline, the same flow runs on the browser's built-in multimodal
+AI entirely on-device. The photo is analyzed and discarded — never stored.
 
 ## Google Maps integration
 

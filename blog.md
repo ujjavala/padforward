@@ -226,7 +226,7 @@ The answer might get simpler at each step down, but you never get a spinner and 
 
 Supply reports are the lifeblood of the network, so I wanted reporting to take *zero* effort.
 
-On any station page, instead of counting pads and tapping buttons, you can just photograph the donation box. Gemini vision looks at the photo and returns a strict JSON estimate — count, confidence, and a one-line description — which prefills a real supply report you confirm with one tap.
+On any station page — and right inside the Find flow when you pick up a pad — instead of counting pads and tapping buttons, you can just photograph the donation box. Gemini vision looks at the photo and returns a strict JSON estimate — count, confidence, and a one-line description — which prefills a real supply report you confirm with one tap.
 
 And it follows the same philosophy as the assistant: if you're offline, the exact same flow runs on your **browser's built-in multimodal AI** (Chrome's Prompt API), entirely on-device. The photo is analyzed and discarded either way — never uploaded, never stored.
 
