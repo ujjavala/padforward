@@ -12,7 +12,8 @@ import { cacheStations } from "./browserAI";
 // The API is served by Next.js route handlers under /api (same origin).
 // NEXT_PUBLIC_API_URL can still point at the standalone FastAPI service
 // (see services/api + docs/architecture.md) for the full-stack setup.
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
+// `||` (not ??) so an empty env var also falls back to /api.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
