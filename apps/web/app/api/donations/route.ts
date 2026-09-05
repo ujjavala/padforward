@@ -17,6 +17,6 @@ export async function POST(req: NextRequest) {
   const station = getStation(store, stationId);
   if (!station) return NextResponse.json({ detail: "Station not found" }, { status: 404 });
   const paymentMethod: PaymentMethod = body.payment_method === "SOL" ? "SOL" : "IN_PERSON";
-  const result = createDonation(store, station, quantity, paymentMethod, body.wallet_address ?? null);
+  const result = await createDonation(store, station, quantity, paymentMethod, body.wallet_address ?? null);
   return NextResponse.json(result, { status: 201 });
 }

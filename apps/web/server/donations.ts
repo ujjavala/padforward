@@ -1,17 +1,18 @@
-// Solana payment (demo) + donation logic — ports of solana_service.py and
-// donation_service.py. Demo mode simulates a devnet transfer; a real
-// implementation using @solana/web3.js can be dropped in without changing callers.
+// Solana payment + donation logic — ports of solana_service.py and
+// donation_service.py. With SOLANA_DEVNET=1 (or SOLANA_DONOR_SECRET set), SOL
+// donations submit a REAL Memo transaction to Solana devnet (see solana.ts);
+// otherwise — or on devnet failure — the transfer is simulated.
 import { randomInt } from "crypto";
 
 import type { DonationResult, PaymentMethod, SolQuote, Station } from "../lib/types";
 import { classifyNeed } from "./needScore";
 import { recomputeNeedScore, deriveSupplyStatus, type StationRecord, type Store } from "./store";
 import { toStationOut } from "./stations";
+import { devnetEnabled, recordDonationOnDevnet } from "./solana";
 
 // Demo pricing — fixed so the flow is reproducible without a price oracle.
 const SOL_PRICE_USD = 150.0;
 const PAD_PRICE_USD = 0.3;
-const NETWORK = "devnet (simulated)";
 
 const BASE58 =
   "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz123456789";
@@ -23,25 +24,36 @@ export function solQuote(quantity: number): SolQuote {
     sol_amount,
     sol_price_usd: SOL_PRICE_USD,
     pad_price_usd: PAD_PRICE_USD,
-    network: NETWORK,
-    demo: true,
+    network: devnetEnabled() ? "devnet" : "devnet (simulated)",
+    demo: !devnetEnabled(),
   };
 }
 
-function processPayment(quantity: number): { solAmount: number; signature: string } {
+async function processPayment(
+  quantity: number,
+  stationName: string
+): Promise<{ solAmount: number; signature: string }> {
   const solAmount = solQuote(quantity).sol_amount;
+  if (devnetEnabled()) {
+    try {
+      const tx = await recordDonationOnDevnet(quantity, solAmount, stationName);
+      return { solAmount, signature: tx.signature };
+    } catch {
+      // devnet unreachable/unfunded — fall through to simulation
+    }
+  }
   let signature = "";
   for (let i = 0; i < 88; i++) signature += BASE58[randomInt(BASE58.length)];
   return { solAmount, signature };
 }
 
-export function createDonation(
+export async function createDonation(
   store: Store,
   station: StationRecord,
   quantity: number,
   paymentMethod: PaymentMethod = "IN_PERSON",
   _walletAddress?: string | null
-): DonationResult {
+): Promise<DonationResult> {
   const before = {
     supply_status: station.supply_status,
     need_score: station.need_score,
@@ -52,7 +64,7 @@ export function createDonation(
   let solAmount: number | null = null;
   let txSignature: string | null = null;
   if (paymentMethod === "SOL") {
-    const payment = processPayment(quantity);
+    const payment = await processPayment(quantity, station.name);
     solAmount = payment.solAmount;
     txSignature = payment.signature;
   }

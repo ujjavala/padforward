@@ -46,7 +46,10 @@ function resolveStation(
   return undefined;
 }
 
-type ToolFn = (store: Store, args: Record<string, any>) => Record<string, any>;
+type ToolFn = (
+  store: Store,
+  args: Record<string, any>
+) => Record<string, any> | Promise<Record<string, any>>;
 
 const tools: Record<string, ToolFn> = {
   find_nearby_stations: (store, { latitude, longitude, radius_km = 5.0 }) => ({
@@ -99,11 +102,11 @@ const tools: Record<string, ToolFn> = {
     ),
   }),
 
-  create_donation: (store, { station_id, station_name, quantity = 1 }) => {
+  create_donation: async (store, { station_id, station_name, quantity = 1 }) => {
     const station = resolveStation(store, station_id, station_name);
     if (!station) return { error: "No matching station found — donation not recorded." };
     if (quantity <= 0 || quantity > 1000) return { error: "Quantity must be between 1 and 1000." };
-    const result = createDonation(store, station, Number(quantity));
+    const result = await createDonation(store, station, Number(quantity));
     return {
       donation_id: result.donation.id,
       station: station.name,
@@ -300,11 +303,24 @@ export const TOOL_DECLARATIONS = [
   },
 ];
 
-export function executeTool(store: Store, name: string, args: Record<string, any>) {
+export async function executeTool(store: Store, name: string, args: Record<string, any>) {
   const fn = tools[name];
   if (!fn) return { error: `Unknown tool: ${name}` };
   try {
-    return fn(store, args);
+    return await fn(store, args);
+  } catch {
+    return { error: "Tool execution failed." };
+  }
+}
+
+/** Sync executor for the deterministic engine (which only uses sync tools). */
+export function executeToolSync(store: Store, name: string, args: Record<string, any>) {
+  const fn = tools[name];
+  if (!fn) return { error: `Unknown tool: ${name}` };
+  try {
+    const result = fn(store, args);
+    if (result instanceof Promise) return { error: "This action requires the async agent." };
+    return result;
   } catch {
     return { error: "Tool execution failed." };
   }

@@ -2,7 +2,7 @@
 // Gemini function-calling when GEMINI_API_KEY is set; deterministic intent
 // engine otherwise. Both paths call the exact same validated tools.
 import type { AIResponse, AIToolCall } from "../lib/types";
-import { executeTool, TOOL_DECLARATIONS } from "./tools";
+import { executeTool, executeToolSync, TOOL_DECLARATIONS } from "./tools";
 import type { Store } from "./store";
 
 const SYSTEM_PROMPT = `You are the PadForward assistant, part of a community network that helps people
@@ -67,7 +67,7 @@ function deterministicProcess(
 
   const run = (tool: string, args: Record<string, any>) => {
     calls.push({ tool, args });
-    return executeTool(store, tool, args);
+    return executeToolSync(store, tool, args);
   };
 
   const qtyMatch = text.match(/(\d+)\s*(?:pads?|boxes?)?/);
@@ -272,7 +272,7 @@ async function geminiProcess(
     for (const part of fnParts) {
       const name = part.functionCall.name;
       const args = { ...(part.functionCall.args ?? {}) };
-      const result = executeTool(store, name, args);
+      const result = await executeTool(store, name, args);
       calls.push({ tool: name, args });
       responseParts.push({ functionResponse: { name, response: { result } } });
     }
