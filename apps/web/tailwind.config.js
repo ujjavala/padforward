@@ -5,18 +5,26 @@ module.exports = {
     extend: {
       colors: {
         ink: {
-          900: "#1b1b2f",
-          700: "#3a3a55",
-          500: "#5c5c78",
-          300: "#a3a3ba",
+          900: "#2b1b3d",
+          700: "#4a3a60",
+          500: "#6f5c85",
+          300: "#b3a3c4",
         },
+        // Brand pink — mapped over the `teal` token name used throughout the app.
         teal: {
-          650: "#0f766e",
+          50: "#fdf2f7",
+          100: "#fce7f1",
+          200: "#fbcfe3",
+          300: "#f8a8c9",
+          650: "#d6246e",
+          700: "#be185d",
+          800: "#9d174d",
         },
+        // Brand purple from the logo.
         plum: {
-          600: "#7c3aed",
+          600: "#6d4fd4",
         },
-        cream: "#faf8f5",
+        cream: "#fdf8fa",
       },
       borderRadius: {
         xl2: "1.25rem",

@@ -25,6 +25,16 @@ interface Turn {
   provider?: string;
 }
 
+const TOOL_LABELS: Record<string, string> = {
+  find_nearby_stations: "searched nearby stations",
+  recommend_donation_targets: "found donation targets",
+  report_supply_status: "updated supply status",
+  create_donation: "recorded donation",
+  adopt_station: "registered champion",
+  find_stations_along_route: "searched along route",
+  get_impact: "looked up impact stats",
+};
+
 const SUGGESTIONS = [
   "I need a pad nearby",
   "Where should I donate 20 pads?",
@@ -119,7 +129,7 @@ export default function AssistantPage() {
             {turn.tools && turn.tools.length > 0 && (
               <p className="mt-1.5 flex items-center gap-1 text-xs opacity-70">
                 <Wrench aria-hidden="true" className="h-3 w-3" />
-                {turn.tools.join(", ")}
+                {turn.tools.map((t) => TOOL_LABELS[t] ?? t.replace(/_/g, " ")).join(" · ")}
               </p>
             )}
             {(turn.provider === "browser-ai" || turn.provider === "offline-heuristics") && (

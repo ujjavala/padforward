@@ -1,4 +1,10 @@
+*This is a submission for [Weekend Challenge: Generosity Edition](https://dev.to/challenges/weekend-2026-09-03)*
+
 # I built PadForward because sometimes you just need a pad
+
+> **💗 Live demo:** [padforward-generosity.vercel.app](https://padforward-generosity.vercel.app/) · **Code:** [github.com/ujjavala/padforward](https://github.com/ujjavala/padforward)
+
+## What I Built
 
 A few days ago, I unexpectedly got my period while I was out.
 
@@ -46,7 +52,7 @@ That's where **PadForward** came from.
 
 ---
 
-# So, what is PadForward?
+### So, what is PadForward?
 
 PadForward is a community-powered network for finding and donating menstrual products in public places.
 
@@ -68,7 +74,7 @@ PadForward simply connects the two.
 
 ---
 
-# If you need one, you shouldn't have to ask
+### If you need one, you shouldn't have to ask
 
 The first thing I wanted to get right was the emergency experience.
 
@@ -113,7 +119,7 @@ And afterwards, instead of asking for anything back, PadForward can simply say:
 
 ---
 
-# But where do the pads come from?
+### But where do the pads come from?
 
 This is where the other half of PadForward comes in.
 
@@ -146,7 +152,7 @@ It turns a small thing sitting in my cupboard into something that might be exact
 
 ---
 
-# And yes, I'm using Solana for the donation
+### And yes, I'm using Solana for the donation
 
 I also wanted the Solana integration to actually mean something in the product, rather than adding blockchain just so I could say I used blockchain.
 
@@ -172,7 +178,7 @@ The blockchain is underneath the experience rather than becoming the experience.
 
 ---
 
-# I didn't want another chatbot
+### I didn't want another chatbot
 
 The other technology I really wanted to use properly was Google AI.
 
@@ -216,7 +222,7 @@ The answer might get simpler at each step down, but you never get a spinner and 
 
 ---
 
-# What if the map says there are pads, but there aren't?
+### What if the map says there are pads, but there aren't?
 
 This was another thing I didn't want to fake.
 
@@ -248,7 +254,7 @@ Over time, this could become a really interesting data problem too — figuring 
 
 ---
 
-# The people who keep it going
+### The people who keep it going
 
 Some people might want to do more than make a one-off donation.
 
@@ -264,7 +270,7 @@ It should become a little community network that people help maintain.
 
 ---
 
-# The bigger idea is the network
+### The bigger idea is the network
 
 This is the part that excites me most.
 
@@ -300,7 +306,7 @@ Sometimes it can just be:
 
 ---
 
-# There's a lot more I want to do with it
+### There's a lot more I want to do with it
 
 For the hackathon, I'm starting with public transport locations because they make the problem very tangible.
 
@@ -320,7 +326,7 @@ The core idea stays the same.
 
 ---
 
-# Why PadForward?
+### Why PadForward?
 
 I started with a very ordinary, slightly inconvenient experience.
 
@@ -355,3 +361,39 @@ Just access.
 And if you have one to spare?
 
 **Pass it forward. 💗**
+
+---
+
+## Demo
+
+The demo is live at **[padforward-generosity.vercel.app](https://padforward-generosity.vercel.app/)** — no account, no sign-up.
+
+A few things to try:
+
+- **[Find a pad](https://padforward-generosity.vercel.app/find)** — share your location (or browse the demo stations) and see nearby community supply with walking times.
+- **[Donate](https://padforward-generosity.vercel.app/donate)** — ask *"Where should my donation go?"*, pick the critical station, and watch it flip from 🔴 to 🟢 — optionally paying with SOL.
+- **[Ask PadForward](https://padforward-generosity.vercel.app/assistant)** — try *"I need a pad nearby"*, *"I have 20 pads to donate"*, or *"The donation box at Town Hall is empty"* and watch the agent call real application tools.
+- **[Impact](https://padforward-generosity.vercel.app/impact)** — see the network's live numbers update as you interact.
+
+> All stations are clearly-labelled **demo community points** at real Sydney station coordinates — supply figures are demo data, not real inventory.
+
+## Code
+
+{% github ujjavala/padforward %}
+
+## How I Built It
+
+For the hackathon the whole product ships as a **single Next.js 14 app on Vercel** — the UI plus API route handlers with an in-memory demo store. The **designed architecture** (FastAPI + PostgreSQL/PostGIS behind the exact same API contract) lives in `services/api` with docker-compose and a full pytest suite; the frontend switches to it with one env var.
+
+The interesting pieces:
+
+- **An agent, not a chatbot (Google AI).** Gemini 2.0 Flash gets a registry of 11 validated application tools (`find_nearby_stations`, `get_highest_need_locations`, `report_supply_status`, `create_donation`, …) and decides which to call — multi-round function calling, and it may only state availability that comes from tool results. It can never touch the data store directly.
+- **A four-tier AI fallback chain.** Gemini → a deterministic intent engine using the *same tools* → the browser's built-in on-device AI (Chrome Prompt API / Gemini Nano) grounded in cached station data when you're fully offline → plain heuristics over the cached map. The answer gets simpler at each step, but you never get a spinner and a shrug.
+- **Solana donations.** Sponsoring pads produces a quote (pads → SOL) and records the donation with a transaction signature. With devnet enabled, it submits a **real Memo transaction to Solana devnet** (auto-airdrop funded) and links to Solana Explorer; otherwise it's transparently labelled *devnet (simulated)*.
+- **A deterministic, ML-ready need score.** Every station gets a 0–100 score (40% supply shortage, 20% estimated demand, 15% staleness, 15% recent requests, 10% historical demand) in an isolated module — that's what routes donations to where they help most.
+- **Trust over false precision.** Supply is community-reported (🟢/🟡/🔴/⚪) with timestamps and a confidence model — champion reports and agreeing recent reports raise confidence, conflicts lower it.
+
+## Prize Categories
+
+- **Best Use of Google AI** — Gemini function-calling agent over real application tools, plus the offline Chrome built-in AI (Gemini Nano) fallback.
+- **Best Use of Solana** — donation flow with SOL quotes and on-chain (devnet) Memo transaction records — the blockchain underneath the experience, not the experience.

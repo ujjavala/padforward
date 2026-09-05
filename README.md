@@ -73,6 +73,15 @@ PostgreSQL/PostGIS behind that same contract — lives in `services/api` with
 `docker-compose.yml` and a full pytest suite, and the frontend switches to it
 with one env var (`NEXT_PUBLIC_API_URL`).
 
+### Pages
+
+`/` home · `/find` nearby stations · `/donate` donation flow · `/assistant`
+AI agent · `/impact` network stats & generosity loop · `/champion` adopt a
+station · `/about` the story behind PadForward · `/stations/[id]` station detail.
+
+The UI uses the PadForward brand palette (logo pink `#d6246e` + purple
+`#6d4fd4`) defined as Tailwind tokens in `apps/web/tailwind.config.js`.
+
 ## Tech stack
 
 | Layer | Tech |

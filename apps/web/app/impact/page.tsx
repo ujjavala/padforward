@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ClipboardList, Gift, Package } from "lucide-react";
+import { ArrowRight, ClipboardList, Gift, HeartHandshake, MapPin, Package, RefreshCw } from "lucide-react";
 import { StationCard } from "@/components/StationCard";
 import { api } from "@/lib/api";
 import type { Impact } from "@/lib/types";
@@ -64,17 +64,52 @@ export default function ImpactPage() {
         </ul>
       </section>
 
-      <section aria-label="The generosity loop" className="card text-center text-sm">
-        <h2 className="font-semibold">The generosity loop</h2>
-        <div className="mt-3 flex flex-col items-center gap-1 text-ink-700">
-          <p className="font-semibold">{impact.donors.toLocaleString()} donors</p>
-          <span aria-hidden="true">↓</span>
-          <p className="font-semibold">{impact.stations} community stations</p>
-          <span aria-hidden="true">↓</span>
-          <p className="font-semibold">{impact.pads_donated.toLocaleString()} pads shared</p>
-          <span aria-hidden="true">↓</span>
-          <p className="font-semibold">Community members — privately, no asking</p>
-        </div>
+      <section aria-label="The generosity loop" className="card !p-6">
+        <h2 className="text-center font-semibold">The generosity loop</h2>
+        <ol className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
+          {[
+            {
+              Icon: Gift,
+              value: impact.donors.toLocaleString(),
+              label: impact.donors === 1 ? "donor gives" : "donors give",
+            },
+            {
+              Icon: MapPin,
+              value: impact.stations.toLocaleString(),
+              label: "stations stocked",
+            },
+            {
+              Icon: Package,
+              value: impact.pads_donated.toLocaleString(),
+              label: "pads shared",
+            },
+            {
+              Icon: HeartHandshake,
+              value: null,
+              label: "received privately — no asking",
+            },
+          ].map((step, i, steps) => (
+            <li key={step.label} className="flex flex-col items-center gap-2 sm:flex-row">
+              <div className="flex w-full min-w-[130px] flex-col items-center rounded-xl2 bg-teal-50 px-4 py-3 text-center sm:w-auto">
+                <step.Icon aria-hidden="true" className="h-5 w-5 text-teal-650" />
+                {step.value !== null && (
+                  <p className="mt-1 text-lg font-bold leading-none text-teal-800">{step.value}</p>
+                )}
+                <p className="mt-1 text-xs font-medium text-ink-700">{step.label}</p>
+              </div>
+              {i < steps.length - 1 && (
+                <ArrowRight
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 rotate-90 text-ink-300 sm:rotate-0"
+                />
+              )}
+            </li>
+          ))}
+        </ol>
+        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-ink-500">
+          <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+          When they're able, they give back — and the loop continues.
+        </p>
       </section>
 
       {impact.urgent_stations.length > 0 && (
